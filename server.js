@@ -14,7 +14,7 @@ var User = require('./app/models/user'); //get mongoose model
 // =======================
 // configuration =========
 // =======================
-var port = process.env.PORT || 8000; // create, sign and verify tokens
+var port = process.env.PORT || 8003; // create, sign and verify tokens
 mongoose.connect(config.database); // db connect
 app.set('superSecret', config.secret); // secret variable
 
@@ -31,12 +31,11 @@ app.use(morgan('dev'));
 // =======================
 // basic route
 app.get('/', function(req, res) {
-    res.send('Hello! The Api is at http://localhost:' + port + '/api/');
+    res.send('Hello! The Api is y at http://localhost:' + port + '/api/');
 });
 
 app.get('/setup', function(req, res) {
 
-    //create a sample user
     var nick = new User({
         name: 'Nick Cerminara',
         password: 'password',
@@ -54,6 +53,65 @@ app.get('/setup', function(req, res) {
 
 
 //API routes
+
+// get an instance of the router for api routes
+var apiRoutes = express.Router();
+
+// TODO: route to authenticate a user (POST http://localhost:8000/api/authenticate)
+apiRoutes.post('/authenticate', function(req, res) {
+
+    // find the user
+    User.findOne({
+        name: req.body.name
+    }, function(err, user) {
+
+        if (err) throw err;
+
+        if (!user) {
+            res.json({ success: false, message: 'Authentication failed. User not found. '});
+        } else if (user) {
+
+            // check if password matches
+            if (user.password != req.body.password) {
+                res.json({ success: false, message: 'Authentication failed. Wrong password. '})
+            } else {
+
+                // if user found and password is right
+                // create a token
+                var token = jwt.sign(user, app.get('superSecret'), {
+                    expiresIn: "24h" // expires in 24 hours
+                });
+
+                // return the information including token as JSON
+                res.json({
+                    success: true,
+                    message: 'Enjoy your token!',
+                    token: token
+                });
+
+            }
+        }
+
+    });
+
+});
+
+// TODO: route middleware to verify a token
+
+// route to show a random message
+apiRoutes.get('/', function(req, res) {
+    res.json({ message: 'Welcome to the coolest API on earth!' });
+});
+
+// route to return all users (GET http://localhost8000/api/users)
+apiRoutes.get('/users', function(req, res) {
+    User.find({}, function(err, users) {
+        res.json(users);
+    });
+});
+
+// apply the routes to our application with the prefix /api
+app.use('/api', apiRoutes);
 
 // =======================
 // start the server ======
