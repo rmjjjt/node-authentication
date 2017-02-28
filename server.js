@@ -14,7 +14,7 @@ var User = require('./app/models/user'); //get mongoose model
 // =======================
 // configuration =========
 // =======================
-var port = process.env.PORT || 8080; // create, sign and verify tokens
+var port = process.env.PORT || 8000; // create, sign and verify tokens
 mongoose.connect(config.database); // db connect
 app.set('superSecret', config.secret); // secret variable
 
@@ -33,6 +33,25 @@ app.use(morgan('dev'));
 app.get('/', function(req, res) {
     res.send('Hello! The Api is at http://localhost:' + port + '/api/');
 });
+
+app.get('/setup', function(req, res) {
+
+    //create a sample user
+    var nick = new User({
+        name: 'Nick Cerminara',
+        password: 'password',
+        admin: true
+    });
+
+    // save the sample user
+    nick.save(function(err) {
+        if (err) throw err;
+
+        console.log('User saved successfully');
+        res.json({ success: true });
+    });
+});
+
 
 //API routes
 
